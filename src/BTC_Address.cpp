@@ -51,6 +51,7 @@ namespace BTC
             { TestNet4,   { {111, Address::P2PKH }, {196, Address::P2SH} } },
             { ScaleNet,   { {111, Address::P2PKH }, {196, Address::P2SH} } },
             { RegTestNet, { {111, Address::P2PKH }, {196, Address::P2SH} } },
+            { NexTestNet, { {111, Address::P2PKH }, {196, Address::P2SH} } },
         };
         Byte verByteForNetAndKind(Net net, Address::Kind kind) {
             if (const auto map = netVerByteKindMap.value(net); LIKELY(!map.isEmpty())) {
@@ -124,8 +125,8 @@ namespace BTC
                     PN{bitcoin::TestNetChainParams.CashAddrPrefix(), Net::TestNet},
                     PN{bitcoin::TestNet4ChainParams.CashAddrPrefix(), Net::TestNet4},
                     PN{bitcoin::ScaleNetChainParams.CashAddrPrefix(), Net::ScaleNet},
-                    PN{bitcoin::RegTestNetChainParams.CashAddrPrefix(), Net::RegTestNet},
-                    PN{bitcoin::NexTestNetChainParams.CashAddrPrefix(), Net::NexTestNet},})
+                    PN{bitcoin::NexTestNetChainParams.CashAddrPrefix(), Net::NexTestNet},
+                    PN{bitcoin::RegTestNetChainParams.CashAddrPrefix(), Net::RegTestNet},})
             {
                 content = bitcoin::DecodeCashAddrContent(ss, prefix);
                 if (!content.hash.empty()) {
@@ -254,6 +255,7 @@ namespace BTC
                 case Net::TestNet:    prefix = &bitcoin::TestNetChainParams.cashaddrPrefix; break;
                 case Net::TestNet4:   prefix = &bitcoin::TestNet4ChainParams.cashaddrPrefix; break;
                 case Net::ScaleNet:   prefix = &bitcoin::ScaleNetChainParams.cashaddrPrefix; break;
+                case Net::NexTestNet: prefix = &bitcoin::NexTestNetChainParams.cashaddrPrefix; break;
                 case Net::RegTestNet: prefix = &bitcoin::RegTestNetChainParams.cashaddrPrefix; break;
                 case Net::Invalid:    break;
                 }
