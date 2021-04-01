@@ -124,7 +124,8 @@ namespace BTC
                     PN{bitcoin::TestNetChainParams.CashAddrPrefix(), Net::TestNet},
                     PN{bitcoin::TestNet4ChainParams.CashAddrPrefix(), Net::TestNet4},
                     PN{bitcoin::ScaleNetChainParams.CashAddrPrefix(), Net::ScaleNet},
-                    PN{bitcoin::RegTestNetChainParams.CashAddrPrefix(), Net::RegTestNet},})
+                    PN{bitcoin::RegTestNetChainParams.CashAddrPrefix(), Net::RegTestNet},
+                    PN{bitcoin::NexTestNetChainParams.CashAddrPrefix(), Net::NexTestNet},})
             {
                 content = bitcoin::DecodeCashAddrContent(ss, prefix);
                 if (!content.hash.empty()) {

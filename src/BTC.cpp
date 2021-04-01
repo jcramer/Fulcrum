@@ -165,6 +165,7 @@ namespace BTC
             { TestNet4, "test4"},
             { ScaleNet, "scale"},
             { RegTestNet, "regtest"},
+            { NexTestNet, "nextest"},
         }};
         const QMap<QString, Net> nameNetMap = {{
             {"main",     MainNet},     // BCHN, BU, ABC
@@ -175,6 +176,7 @@ namespace BTC
             {"testnet3", TestNet},     // bchd
             {"testnet4", TestNet4},    // possible future bchd
             {"regtest",  RegTestNet},  // BCHN, BU, ABC, bchd
+            {"nextest", NexTestNet},// forks of BU, bchd
         }};
         const QString invalidNetName = "invalid";
     };

@@ -30,6 +30,7 @@ const CChainParams TestNetChainParams    = { "bchtest" },
                    TestNet4ChainParams   = { "bchtest" },
                    ScaleNetChainParams   = { "bchtest" },
                    RegTestNetChainParams = { "bchreg" },
+                   NexTestNetChainParams = { "nextest" },
                    MainNetChainParams    = { "bitcoincash" };
 
 namespace {

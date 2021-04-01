@@ -191,6 +191,9 @@ enum opcodetype {
     OP_CHECKDATASIG = 0xba,
     OP_CHECKDATASIGVERIFY = 0xbb,
 
+    // Group tokenization flag
+    OP_GROUP = 0xee,
+
     // The first op_code value after all defined opcodes
     FIRST_UNDEFINED_OP_VALUE,
 
