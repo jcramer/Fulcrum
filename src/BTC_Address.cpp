@@ -86,6 +86,9 @@ namespace BTC
                 if (net == ScaleNet)
                     // don't auto-detect scalenet for now -- skip it.
                     continue;
+                // if (net == NexTestNet)  // Unsure what this block does
+                //     // don't auto-detect scalenet for now -- skip it.
+                //     continue;
                 if (it.value().contains(verByte))
                     return net;
             }

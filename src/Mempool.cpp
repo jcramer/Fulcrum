@@ -73,6 +73,15 @@ auto Mempool::addNewTxs(ScriptHashesAffectedSet & scriptHashesAffected,
     Stats ret;
     ret.oldSize = this->txs.size();
     ret.oldNumAddresses = this->hashXTxs.size();
+
+    // helper used in group token hacks below
+    typedef bitcoin::prevector<28U, uint8_t, uint32_t, int32_t>::const_iterator vec_iter;
+    auto pushEndSlice = [](bitcoin::CScript *script, vec_iter first, vec_iter last) {
+        for (vec_iter cur = first; cur != last; ++cur) {
+            *script << *cur;
+        }
+    };
+
     // first, do new outputs for all tx's, and put the new tx's in the mempool struct
     for (auto & [hash, pair] : txsNew) {
         auto & [tx, ctx] = pair;
@@ -89,6 +98,37 @@ auto Mempool::addNewTxs(ScriptHashesAffectedSet & scriptHashesAffected,
             const auto & script = out.scriptPubKey;
             if (!BTC::IsOpReturn(script)) {
                 // UTXO only if it's not OP_RETURN -- can't do 'continue' here as that would throw off the 'n' counter
+
+                /*
+                    FIXME:
+                    This is a temporary hack to simplify dealing with group token outputs.
+
+                    Remove the group token front parts, leaving only the normal output scriot 
+                    bytes. This allows clients to receive alerts for group outputs without
+                    having to subscribe to a second script hash.
+                */
+                if (script.Find(bitcoin::opcodetype::OP_GROUP) > 0) {
+
+                    // look at the last two bytes of the script to determine type
+                    const int l_idx = script.size() - 1;
+                    const int p2pkh_len = 25;
+                    const int p2sh_len = 23;
+                    bitcoin::CScript _script;
+                    if (script[l_idx] == bitcoin::opcodetype::OP_CHECKSIG) {     // for p2pkh case
+                        _script << 0x19;
+                        pushEndSlice(&_script, script.begin() + l_idx-p2pkh_len, script.end() + l_idx);
+                    } else if (script[l_idx] == bitcoin::opcodetype::OP_EQUAL) { // for p2sh case
+                        _script << 0x17;
+                        pushEndSlice(&_script, script.begin() + l_idx-p2sh_len, script.end() + l_idx);
+                    } else {
+                        // defensive programming paranoia
+                        throw InternalError(QString("UNKNOWN GROUP SCRIPT TYPE"));
+                    }
+                    script << _script;
+
+                    Warning() << "group output detected";
+                }
+
                 HashX sh = BTC::HashXFromCScript(out.scriptPubKey);
                 // the below is a hack to save memory by re-using the same shallow copy of 'sh' each time
                 auto hxit = this->hashXTxs.find(sh);

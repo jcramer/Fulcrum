@@ -43,6 +43,14 @@ void PreProcessedBlock::fill(BlockHeight blockHeight, size_t blockSize, const bi
     txHashToIndex.max_load_factor(1.0);
     txHashToIndex.reserve(b.vtx.size());
 
+    // helper used in group token hacks below
+    typedef bitcoin::prevector<28U, uint8_t, uint32_t, int32_t>::const_iterator vec_iter;
+    auto pushEndSlice = [](bitcoin::CScript *script, vec_iter first, vec_iter last) {
+        for (vec_iter cur = first; cur != last; ++cur) {
+            *script << *cur;
+        }
+    };
+
     // run through all tx's, build inputs and outputs lists
     size_t txIdx = 0;
     for (const auto & tx : b.vtx) {
@@ -67,9 +75,38 @@ void PreProcessedBlock::fill(BlockHeight blockHeight, size_t blockSize, const bi
             );
             estimatedThisSizeBytes += sizeof(OutPt);
             const size_t outputIdx = outputs.size()-1;
-            if (const auto cscript = out.scriptPubKey;
+            if (auto cscript = out.scriptPubKey;
                     !BTC::IsOpReturn(cscript))  ///< skip OP_RETURN
             {
+
+                /*
+                    FIXME:
+                    This is a temporary hack to simplify dealing with group token outputs.
+
+                    Remove the group token front parts, leaving only the normal output scriot 
+                    bytes. This allows clients to receive alerts for group outputs without
+                    having to subscribe to a second script hash.
+                */
+                if (cscript.Find(bitcoin::opcodetype::OP_GROUP) > 0) {
+
+                    // look at the last two bytes of the script to determine type
+                    const int l_idx = cscript.size() - 1;
+                    const int p2pkh_len = 25;
+                    const int p2sh_len = 23;
+                    bitcoin::CScript *script;
+                    if (cscript[l_idx] == bitcoin::opcodetype::OP_CHECKSIG) {
+                        *script << 0x19;
+                        pushEndSlice(script, cscript.begin() + l_idx-p2pkh_len, cscript.end() + l_idx);
+                    } else if (cscript[l_idx] == bitcoin::opcodetype::OP_EQUAL) {
+                        *script << 0x17;
+                        pushEndSlice(script, cscript.begin() + l_idx-p2sh_len, cscript.end() + l_idx);
+                    } else {
+                        // defensive programming paranoia
+                        throw InternalError(QString("UNKNOWN GROUP SCRIPT TYPE"));
+                    }
+                    cscript = *script;
+                }
+
                 const HashX hashX = BTC::HashXFromCScript(cscript);
                 // add this output to the hashX -> outputs association for later
                 auto & ag = hashXAggregated[ hashX ];
@@ -152,9 +189,38 @@ void PreProcessedBlock::fill(BlockHeight blockHeight, size_t blockSize, const bi
             outp.spentInInputIndex.emplace( inIdx ); // mark the output as spent by this index
             const auto & prevTx = b.vtx[prevTxIdx];
             assert(inp.prevoutN < prevTx->vout.size());
-            if (const auto cscript = prevTx->vout[inp.prevoutN].scriptPubKey;  // grab prevOut address
+            if (auto cscript = prevTx->vout[inp.prevoutN].scriptPubKey;  // grab prevOut address
                     !BTC::IsOpReturn(cscript))
             {
+
+                /*
+                    FIXME:
+                    This is a temporary hack to simplify dealing with group token outputs.
+
+                    Remove the group token front parts, leaving only the normal output scriot 
+                    bytes. This allows clients to receive alerts for group outputs without
+                    having to subscribe to a second script hash.
+                */
+                if (cscript.Find(bitcoin::opcodetype::OP_GROUP) > 0) {
+
+                    // look at the last two bytes of the script to determine type
+                    const int l_idx = cscript.size() - 1;
+                    const int p2pkh_len = 25;
+                    const int p2sh_len = 23;
+                    bitcoin::CScript *script;
+                    if (cscript[l_idx] == bitcoin::opcodetype::OP_CHECKSIG) {
+                        *script << 0x19;
+                        pushEndSlice(script, cscript.begin() + l_idx-p2pkh_len, cscript.end() + l_idx);
+                    } else if (cscript[l_idx] == bitcoin::opcodetype::OP_EQUAL) {
+                        *script << 0x17;
+                        pushEndSlice(script, cscript.begin() + l_idx-p2sh_len, cscript.end() + l_idx);
+                    } else {
+                        // defensive programming paranoia
+                        throw InternalError(QString("UNKNOWN GROUP SCRIPT TYPE"));
+                    }
+                    cscript = *script;
+                }
+
                 // mark this input as involving this hashX
                 const HashX hashX = BTC::HashXFromCScript(cscript);
                 auto & ag = hashXAggregated[ hashX ];
